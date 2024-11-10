@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Trippy with Mandalas (Long Time - 100 seconds)</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        canvas {
+            border: 1px solid #000000;
+        }
+    </style>
+</head>
+<body>
+    <button id="playButton">Get Trippy</button>
+    <canvas id="mandalaCanvas"></canvas>
+
+    <script>
+        // Setup
+		const canvas = document.getElementById('mandalaCanvas');
+		const ctx = canvas.getContext('2d');
+		var centerX = canvas.width / 2;
+		var centerY = canvas.height / 2;
+		const radius = 550;
+		const layers = 500;
+		const minPetalCount = 10;
+		const maxPetalCount = 100;
+        const petalCount = 240;
+        const numTrips = 100;
+		const randomArrayPetalCount = createRandomArray(numTrips, minPetalCount, maxPetalCount);
+        
+        // Resize the canvas when the window is resized
+        window.addEventListener('resize', resizeCanvas);
+
+        // Add Event Listener to Buttom Clicks
+		document.getElementById('playButton').addEventListener('click', getTrippy);
+		
+        // On Start, Load Starter Mandala
+        window.onload = function() {
+            
+            // Hide the Canvas
+            canvas.style.display = 'none'
+
+            // Initial resize to match the browser window size
+            resizeCanvas();
+          
+        };
+
+        function resizeCanvas() {
+            const canvas = document.getElementById('mandalaCanvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            centerX = canvas.width / 2;
+            centerY = canvas.height / 2;
+        }
+
+        // Get Trippy!
+		function getTrippy () {
+			
+            // Hide the Canvas
+            canvas.style.display = 'block'
+
+            // Draw the Background Mandala
+            drawMandala(ctx, centerX, centerY, radius, layers, petalCount);
+
+            // Play Trippy Music
+			playTrippyMusic();
+			
+			// Repeat Mandala Drawing
+			repeatFunctionWithInterval(() => {
+				let count = 0;
+				let randomNumberPetalCount = randomArrayPetalCount[count];
+				drawMandala(ctx, centerX, centerY, radius, layers, randomNumberPetalCount);
+				count++;
+			}, numTrips, 1000); // Calls the function X times with a 1000ms (1 second) interval
+		}
+		
+		function repeatFunctionWithInterval(fn, times, interval) {
+			let count = 0;
+			const intervalId = setInterval(() => {
+			if (count < times) {
+				fn();
+				count++;
+				} else {
+					clearInterval(intervalId);
+				}
+			}, interval);
+		}
+		
+		function createRandomArray(length, min, max) {
+			const randomArray = [];
+			for (let i = 0; i < length; i++) {
+				randomArray.push(getRandomNumber(min, max));
+			}
+			return randomArray;
+		}
+		
+		function getRandomNumber(min, max) {
+			return Math.floor(Math.random() * (max - min + 1)) + min;
+		}
+		
+		function playTrippyMusic() {
+
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Create oscillators
+            const oscillators = [];
+            for (let i = 0; i < 5; i++) {
+                const oscillator = audioCtx.createOscillator();
+                oscillator.type = 'sine'; // sine, square, sawtooth, triangle, custom
+                oscillator.frequency.setValueAtTime(Math.random() * 1000, audioCtx.currentTime);
+                oscillator.start();
+                oscillators.push(oscillator);
+            }
+
+            // Create gain nodes
+            const gainNodes = [];
+            for (let i = 0; i < 5; i++) {
+                const gainNode = audioCtx.createGain();
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNodes.push(gainNode);
+            }
+
+            // Connect oscillators to gain nodes and gain nodes to destination
+            oscillators.forEach((oscillator, index) => {
+                oscillator.connect(gainNodes[index]);
+                gainNodes[index].connect(audioCtx.destination);
+
+                // Set random frequency modulation
+                setInterval(() => {
+                    oscillator.frequency.setValueAtTime(Math.random() * 1000, audioCtx.currentTime);
+                }, 1000);
+            });
+
+            // Stop oscillators after X seconds
+            setTimeout(() => {
+                oscillators.forEach(oscillator => oscillator.stop());
+                console.log('Trippy music stopped.');
+            }, numTrips * 1000);           
+        }
+		
+        function drawMandala(ctx, centerX, centerY, radius, layers, petalCount) {
+            for (let layer = 0; layer < layers; layer++) {
+
+                const currentRadius = (radius / layers) * (layer + 1);
+
+                for (let i = 0; i < petalCount; i++) {
+
+                    const angle = (i / petalCount) * 2 * Math.PI;
+                    const petalLength = currentRadius / 2;                   
+                    const startX = centerX + currentRadius * Math.cos(angle);
+                    const startY = centerY + currentRadius * Math.sin(angle);
+                    const endX = centerX + (currentRadius + petalLength) * Math.cos(angle);
+                    const endY = centerY + (currentRadius + petalLength) * Math.sin(angle);
+                    
+                    drawPetal(ctx, startX, startY, endX, endY, petalLength / 2);
+                }
+            }
+        }
+
+        function drawPetal(ctx, startX, startY, endX, endY, controlPointOffset) {
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            const cp1X = startX + controlPointOffset * Math.cos(Math.atan2(endY - startY, endX - startX) - Math.PI / 2);
+            const cp1Y = startY + controlPointOffset * Math.sin(Math.atan2(endY - startY, endX - startX) - Math.PI / 2);
+            const cp2X = endX + controlPointOffset * Math.cos(Math.atan2(endY - startY, endX - startX) + Math.PI / 2);
+            const cp2Y = endY + controlPointOffset * Math.sin(Math.atan2(endY - startY, endX - startX) + Math.PI / 2);
+            ctx.bezierCurveTo(cp1X, cp1Y, cp2X, cp2Y, endX, endY);
+            ctx.closePath();
+            ctx.fillStyle = `hsl(${(Math.random() * 360).toFixed()}, 100%, 50%)`;
+            ctx.fill();
+        }
+
+    </script>
+</body>
+</html>
