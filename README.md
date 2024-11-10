@@ -1,5 +1,5 @@
 # GetTrippy
- Mandalas Change with Music generated with JavaScript
+ Mandalas Change with weird sounds generated with JavaScript
 
 [Get Trippy](https://www.katiegirl.net/portfolio/projects/JavaScript/GetTrippy/GetTrippy.html)
 
